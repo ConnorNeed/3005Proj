@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>User Profile</h2>
+    <form id="profileForm" method="POST">
+      <input type="text" id="fullName" name="fullName" placeholder="Full Name" required><br>
+      <input type="number" id="age" name="age" placeholder="Age"><br>
+      <select name="gender" id="gender">
+        <option value="Gender">Please select</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+        <option value="Prefer Not To answer">Prefer Not To answer</option>
+      </select><br>
+      <textarea id="bio" name="bio" placeholder="Bio"></textarea><br>
+      <button type="button" id="updateProfileButton">Update Profile</button>
+    </form>
+    <p><a href="/dashboard">Back to Dashboard</a></p>
+  </div>
+  <script src="/user/profile.js"></script>
+</body>
+</html>

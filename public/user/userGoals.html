@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Goals</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .add-button {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>User Goals</h1>
+    <table id="user-goals-table">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th> </th>
+                <th> </th>
+                <th> </th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <button onclick="saveGoals()">Save</button>
+    <button class="add-button" onclick="addRow()">Add Goal</button>
+    <button class="cancel-button" onclick="getGoals()">Clear</button>
+    <div id="nav_buttons">
+        <a href="/dashboard"><button>Home</button></a>
+        <a href="/profile"><button>Profile</button></a>
+        <a href="/activity"><button>User Activities</button></a>
+    </div>
+    <script src="user/userGoals.js"></script>
+</body>
+</html>

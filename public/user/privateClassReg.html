@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Schedual</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .add-button {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Private Class</h1>
+    <div id="book-form">
+        <select name="trainer" id="trainer-menu">
+            <option value="Any">Any</option>
+        </select>
+        <input type="time" id="start_time" name="start_time"></input>
+        <input type="time" id="start_time" name="end_time"></input>
+    </div>
+    <button class="reg-button" onclick="registar()">Add Class</button>
+    <div id="nav_buttons">
+        <a href="/dashboard"><button>Home</button></a>
+    </div>
+    <script src="user/privateClassReg.js"></script>
+</body>
+</html>

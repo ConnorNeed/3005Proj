@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Schedual</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .add-button {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Schedual</h1>
+    <div id="add-form">
+        <select name="class_type" id="class_type">
+            <option value="Select Type">Select Type</option>
+            <option value="Yoga">Yoga</option>
+            <option value="Cycling">Cycling</option>
+            <option value="Lifting">Lifting</option>
+            <option value="Block off">Block off</option>
+        </select>
+        <input type="datetime-local" id="start_time" name="start_time"></input>
+        <input type="datetime-local" id="start_time" name="end_time"></input>
+        <input type="number" id="difficulty" name="difficulty_rating" value="0"></input>
+    </div>
+    <button class="add-button" onclick="addRow()">Add Class</button>
+    <table id="trainer-classes-table">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th> </th>
+                <th> </th>
+                <th> </th>
+                <th> </th>
+            </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+    </table>
+    <div id="nav_buttons">
+        <a href="/dashboard"><button>Home</button></a>
+    </div>
+    <script src="trainer/schedual.js"></script>
+</body>
+</html>

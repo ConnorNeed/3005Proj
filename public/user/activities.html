@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Activitys</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .add-button {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>User Activitys</h1>
+    <div id="add-form">
+        <select name="activity_type" id="activity_type" onchange="changeType(this)">
+            <option value="Select Type">Select Type</option>
+            <option value="Running">Running</option>
+            <option value="Cycling">Cycling</option>
+            <option value="Lifting">Lifting</option>
+        </select>
+        <div id="activity-attr"></div>
+    </div>
+    <button class="add-button" onclick="addRow()">Add Activity</button>
+    <table id="user-activities-table">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th> </th>
+                <th> </th>
+                <th> </th>
+            </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+    </table>
+    <div id="nav_buttons">
+        <a href="/dashboard"><button>Home</button></a>
+        <a href="/profile"><button>Profile</button></a>
+        <a href="/goal"><button>User Goals</button></a>
+    </div>
+    <script src="user/activities.js"></script>
+</body>
+</html>
