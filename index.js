@@ -77,7 +77,7 @@ passport.deserializeUser(async (id, done) => {
 app.post('/login', passport.authenticate('local', {
   successRedirect: '/dashboard',
   failureRedirect: '/login',
-  failureFlash: true,
+  failureFlash: false,
 }));
 
 app.post('/register', async (req, res) => {
@@ -184,6 +184,39 @@ app.get('/activity', async (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'user', 'activities.html'));
 });
 
+// group classes page
+app.get('/groupClassReg', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'user', 'groupClasses.html'));
+});
+app.get('/user/availibleClasses', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  sendAllGroupClasses(res);
+});
+app.get('/user/registeredClasses', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  sendRegisteredGroupClasses(req.user.id, res);
+});
+app.post('/user/registerForClass', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  registerForClass(req.user.id, req.body.class_id, res);
+});
+app.post('/user/deregisterForClass', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  deregisterForClass(req.user.id, req.body.class_id, res);
+});
+
+
 // private class registration page
 app.get('/privateClassReg', async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -246,6 +279,15 @@ app.get('/schedual', async (req, res) => {
   }
   res.sendFile(path.join(__dirname, 'public', 'trainer', 'schedual.html'));
 });
+app.get('/trainer/privateClasses', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 1) {
+    res.redirect('/dashboard');
+  }
+  sendPrivateClasses(req.user.id, res);
+});
 
 // member search page
 app.get('/trainer/memberSearch', async (req, res) => {
@@ -267,15 +309,6 @@ app.post('/trainer/memberSearch', async (req, res) => {
   getMembersInfo(req.body.name, res);
 });
 
-app.get('/trainer/privateClasses', async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.redirect('/login');
-  }
-  if (req.user.usertype != 1) {
-    res.redirect('/dashboard');
-  }
-  sendPrivateClasses(req.user.id, res);
-});
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
@@ -352,6 +385,7 @@ function updateProfile(id, fullName, age, gender, bio, res) {
     }
   });
 }
+
 function sendUserInfo(user_id, res) {
   pool.query('SELECT user_profiles.full_name, user_profiles.age, user_profiles.gender, user_profiles.bio FROM login JOIN user_profiles ON login.id = user_profiles.id where login.id = $1', [user_id], (error, result) => {
     if (error) {
@@ -537,6 +571,39 @@ function sendPrivateClasses(trainer_id, res) {
   });
 }
 
+//user register group classes
+async function sendAllGroupClasses(res) {
+  var result = await pool.query("SELECT group_classes.class_id, class_type, start_time, end_time, class_difficulty, user_profiles.full_name AS name, rating FROM group_classes JOIN user_profiles ON group_classes.trainer_id = user_profiles.id JOIN trainers ON trainers.trainer_id = group_classes.trainer_id");
+  res.json(result.rows);
+}
+async function sendRegisteredGroupClasses(user_id, res) {
+  var result = await pool.query("SELECT group_classes.class_id, class_type, start_time, end_time, class_difficulty, user_profiles.full_name AS name, rating FROM group_classes JOIN user_profiles ON group_classes.trainer_id = user_profiles.id JOIN trainers ON trainers.trainer_id = group_classes.trainer_id JOIN class_members ON class_members.class_id = group_classes.class_id WHERE class_members.user_id = $1", [user_id]);
+  res.json(result.rows);
+}
+async function registerForClass(user_id, class_id, res) {
+  pool.query("INSERT INTO class_members (user_id, class_id) VALUES ($1, $2)", [user_id, class_id], (error) => {
+    if (error) {
+      if (error.code == '23505') {
+        res.status(409).send('Already registered for class');
+        return;
+      }
+      console.error('Error registering for class:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
+async function deregisterForClass(user_id, class_id, res) {
+  pool.query("DELETE FROM class_members WHERE user_id = $1 AND class_id = $2", [user_id, class_id], (error) => {
+    if (error) {
+      console.error('Error deregistering for class:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
 
 //trainer search functions
 async function getMembersInfo(name, res){
@@ -553,7 +620,6 @@ async function getMembersInfo(name, res){
   }
   res.json(members);
 }
-
 async function getGoals(user_id) {
   var goals = [];
   for (var goalType = 0; goalType < 4; goalType++) {
@@ -563,7 +629,6 @@ async function getGoals(user_id) {
   }
   return goals;
 }
-
 async function getActivities(user_id) {
   var activities = [];
   for (var activityType = 0; activityType < 3; activityType++) {

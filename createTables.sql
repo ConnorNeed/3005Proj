@@ -71,6 +71,7 @@ CREATE TABLE lifts (
 
 CREATE TABLE trainers (
     trainer_id INT UNIQUE REFERENCES login (id) ON DELETE CASCADE,
+    rating INT
 );
 
 CREATE TABLE group_classes (
@@ -83,9 +84,9 @@ CREATE TABLE group_classes (
 );
 
 CREATE TABLE class_members (
-    class_member_id SERIAL PRIMARY KEY,
     class_id INT REFERENCES group_classes (class_id) ON DELETE CASCADE,
     user_id INT REFERENCES user_profiles (id) ON DELETE CASCADE
+    PRIMARY KEY (class_id, user_id)
 );
 
 CREATE TABLE private_classes (
