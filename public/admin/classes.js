@@ -1,48 +1,75 @@
 
-window.onload = function () {
+window.onload = refresh;
+
+function refresh () {
     var table = document.getElementById("trainer-classes-table");
     table.children[1].innerHTML = "";
+    getTrainers();
     getClasses();
-    getPrivate();
+}
+
+function getTrainers() {
+    const url = "/user/trainers";
+    fetch(url)
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                console.error("Failed to get activities");
+            }
+        })
+        .then(trainer => {
+            const menu = document.getElementById("trainer-menu");
+            menu.innerHTML = '"<option value="None">Select Trainer...</option>"';
+            trainer.forEach(trainer => {
+                const name = trainer.full_name;
+                const id = trainer.id;
+                menu.innerHTML += `<option value="${id}">${name}</option>`;
+            });
+        });
 }
 
 
 function addRow() {
     const form = document.getElementById("add-form");
-    const typeIndex = form.children[0].selectedIndex;
-    const type = form.children[0].value;
-    const start = form.children[1].value;
-    const end = form.children[2].value;
-    const difficulty = form.children[3].value;
+    const trainer = form.children[0].value;
+    const typeIndex = form.children[1].selectedIndex-1;
+    const start = form.children[2].value;
+    const end = form.children[3].value;
+    const difficulty = form.children[4].value;
     if (start > end) {
         alert("Start time must be before end time");
         return;
     }
-    if (typeIndex === 0){
+    if (typeIndex === -1){
         alert("Please select a class type");
         return;
     }
-    addToTable(type, start, end, difficulty);
-    sendClass(typeIndex, start, end, difficulty);
+    if (trainer === "None") {
+        alert("Please select a trainer");
+        return;
+    }
+    sendClass(trainer, typeIndex, start, end, difficulty);
 }
 
-function addToTable(type, start, end, difficulty) {
+function addToTable(trainerName, classId, type, start, end, difficulty) {
     var row = document.getElementById("table-body").insertRow();
-    row.innerHTML = '<tr><td>'+type+'</td><td>'+start+'</td><td>'+end+'</td><td>'+difficulty+'</td><td><button onclick="deleteRow(this)">Delete</button></td></tr>';
+    row.innerHTML = `<tr><td>${trainerName}</td><td>${type}</td><td>${start}</td><td>${end}</td><td>${difficulty}</td><td><button onclick="deleteRow(${classId})">Delete</button></td></tr>`;
 }
 
-async function sendClass(type, start, end, difficulty) {
-    const url = "/trainer/addGroupClass";
+async function sendClass(trainer, type, start, end, difficulty) {
+    const url = "/admin/addGroupClass";
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({type: type, start: start, end: end, difficulty: difficulty})
+            body: JSON.stringify({trainer: trainer, type: type, start: start, end: end, difficulty: difficulty})
         });
         if (response.ok) {
             alert("Class saved successfully");
+            refresh();
         } else {
             console.error('Failed to save class:', response.statusText);
         }
@@ -51,29 +78,18 @@ async function sendClass(type, start, end, difficulty) {
     }
 }
 
-async function deleteRow(button) {
-    var row = button.parentNode.parentNode;
-    var type = row.cells[0].innerText;
-    var start = row.cells[1].innerText;
-    var end = row.cells[2].innerText;
-    var difficulty = row.cells[3].innerText;
-    if (difficulty === "") {
-        const url = "/trainer/delPrivateClass";
-        body = JSON.stringify({name: type, start: start, end: end});
-    } else {
-        const url = "/trainer/delGroupClass";
-        body = JSON.stringify({type: +type, start: start, end: end, difficulty: +difficulty});
-    }
+async function deleteRow(id) {
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: body
+            body: JSON.stringify({id: id})
         });
         if (response.ok) {
             alert("Class deleted successfully");
+            refresh();
         } else {
             console.error('Failed to deleted class:', response.statusText);
         }
@@ -84,7 +100,7 @@ async function deleteRow(button) {
 }
 
 function getClasses() {
-    const url = "/trainer/groupClasses";
+    const url = "/admin/groupClasses";
     fetch(url)
         .then(response => {
             if (response.ok) {
@@ -107,23 +123,7 @@ function getClasses() {
                 } else {
                     console.error("Invalid type");
                 }
-                addToTable(type, c.start_time, c.end_time, c.class_difficulty);
-            });
-        });
-}
-function getPrivate() {
-    const url = "/trainer/privateClasses";
-    fetch(url)
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                console.error("Failed to get private classes: ", response.statusText);
-            }
-        })
-        .then(classes => {
-            classes.forEach(c => {
-                addToTable(c.name, c.start_time, c.end_time, "");
+                addToTable(c.full_name, c.class_id, type, c.start_time, c.end_time, c.class_difficulty);
             });
         });
 }

@@ -106,6 +106,10 @@ app.get('/dashboard', async (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'trainer', 'dashboard.html'));
     return;
   }
+  if (req.user.usertype === 2) {
+    res.sendFile(path.join(__dirname, 'public', 'admin', 'dashboard.html'));
+    return;
+  }
   res.sendFile(path.join(__dirname, 'public', 'user', 'dashboard.html'));
 });
 
@@ -239,21 +243,21 @@ app.post('/user/privateClassReg', async (req, res) => {
 });
 
 // trainer pages
-// schedual page
-app.get('/trainer/schedual', async (req, res) => {
+// schedule page
+app.get('/trainer/schedule', async (req, res) => {
   if (!req.isAuthenticated()) {
     res.redirect('/login');
   }
-  res.sendFile(path.join(__dirname, 'public', 'trainer', 'schedual.html'));
+  res.sendFile(path.join(__dirname, 'public', 'trainer', 'schedule.html'));
 });
-app.get('/trainer/getSchedual', async (req, res) => {
+app.get('/trainer/getSchedule', async (req, res) => {
   if (!req.isAuthenticated()) {
     res.redirect('/login');
   }
   if (req.user.usertype != 1) {
     res.redirect('/dashboard');
   }
-  sendSchedual(req.user.id, res);
+  sendSchedule(req.user.id, res);
 });
 app.post('/trainer/addavailability', async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -275,44 +279,14 @@ app.post('/trainer/deleteavailability', async (req, res) => {
 });
 
 // group classes page
-app.get('/trainer/groupClasses', async (req, res) => {
+app.get('/schedule', async (req, res) => {
   if (!req.isAuthenticated()) {
     res.redirect('/login');
   }
   if (req.user.usertype != 1) {
     res.redirect('/dashboard');
   }
-  const userId = req.user.id;
-  sendGroupClasses(userId, res);
-});
-app.post('/trainer/addGroupClass', async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.redirect('/login');
-  }
-  if (req.user.usertype != 1) {
-    res.redirect('/dashboard');
-  }
-  const userId = req.user.id;
-  saveGroupClass(userId, req.body, res);
-});
-app.post('/trainer/delGroupClass', async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.redirect('/login');
-  }
-  if (req.user.usertype != 1) {
-    res.redirect('/dashboard');
-  }
-  const userId = req.user.id;
-  delGroupClass(userId, req.body, res);
-});
-app.get('/schedual', async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.redirect('/login');
-  }
-  if (req.user.usertype != 1) {
-    res.redirect('/dashboard');
-  }
-  res.sendFile(path.join(__dirname, 'public', 'trainer', 'schedual.html'));
+  res.sendFile(path.join(__dirname, 'public', 'trainer', 'schedule.html'));
 });
 
 // member search page
@@ -333,6 +307,46 @@ app.post('/trainer/memberSearch', async (req, res) => {
     res.redirect('/dashboard');
   }
   getMembersInfo(req.body.name, res);
+});
+
+
+// admin pages
+// classes page
+app.get('/admin/groupClasses', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  sendGroupClasses(res);
+});
+app.post('/admin/addGroupClass', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  saveGroupClass(req.body, res);
+});
+app.post('/admin/delGroupClass', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  delGroupClass(req.body, res);
+});
+app.get('/admin/classes', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'classes.html'));
 });
 
 
@@ -559,7 +573,7 @@ async function deregisterForClass(user_id, class_id, res) {
 }
 // private class functions
 function sendTrainers(res) {
-  pool.query('SELECT id, full_name FROM trainers JOIN user_profiles ON user_profiles.id=trainers.trainer_id', (error, result) => {
+  pool.query('SELECT id, user_profiles.full_name FROM trainers JOIN user_profiles ON user_profiles.id=trainers.trainer_id', (error, result) => {
     if (error) {
       console.error('Error fetching trainers:', error);
       res.status(500).send('Internal server error');
@@ -616,7 +630,7 @@ function deleteavailability(slotId, res) {
     res.sendStatus(200);
   });
 }
-async function sendSchedual(user_id, res) {
+async function sendSchedule(user_id, res) {
   var availability = await pool.query('SELECT * FROM trainer_availability WHERE trainer_id = $1 ORDER BY start_time', [user_id]);
   var privateClasses = await pool.query('SELECT start_time, end_time, user_profiles.full_name AS name FROM private_classes JOIN user_profiles ON private_classes.user_id = user_profiles.id WHERE trainer_id = $1 ORDER BY start_time', [user_id]);
   var groupClasses = await pool.query('SELECT class_type, start_time, end_time, class_difficulty, COUNT(class_members.user_id) AS member_count FROM group_classes LEFT JOIN class_members ON class_members.class_id=group_classes.class_id WHERE trainer_id = $1 GROUP BY class_members.class_id, class_type, start_time, end_time, class_difficulty ORDER BY start_time', [user_id]);
@@ -660,8 +674,8 @@ async function getActivities(user_id) {
 
 
 // admin functions
-function sendGroupClasses(user_id, res) {
-  pool.query('SELECT class_type, start_time, end_time, class_difficulty FROM group_classes WHERE trainer_id = $1', [user_id], (error, result) => {
+function sendGroupClasses(res) {
+  pool.query('SELECT user_profiles.full_name, class_id, class_type, start_time, end_time, class_difficulty FROM group_classes JOIN user_profiles ON user_profiles.id = group_classes.trainer_id', (error, result) => {
     if (error) {
       console.error('Error fetching group classes:', error);
       res.status(500).send('Internal server error');
@@ -671,8 +685,8 @@ function sendGroupClasses(user_id, res) {
     }
   });
 }
-function saveGroupClass(user_id, groupClass, res) {
-  pool.query('INSERT INTO group_classes (trainer_id, class_type, start_time, end_time, class_difficulty) VALUES ($1, $2, $3, $4, $5)', [user_id, groupClass.type, groupClass.start, groupClass.end, groupClass.difficulty], (error) => {
+function saveGroupClass(groupClass, res) {
+  pool.query('INSERT INTO group_classes (trainer_id, class_type, start_time, end_time, class_difficulty) VALUES ($1, $2, $3, $4, $5)', [groupClass.trainer, groupClass.type, groupClass.start, groupClass.end, groupClass.difficulty], (error) => {
     if (error) {
       console.error('Error saving group class:', error);
       res.status(500).send('Internal server error');
@@ -681,8 +695,8 @@ function saveGroupClass(user_id, groupClass, res) {
     res.sendStatus(200);
   });
 }
-function delGroupClass(user_id, groupClass, res) {
-  pool.query('DELETE FROM group_classes WHERE trainer_id = $1 AND class_type = $2 AND start_time = $3 AND end_time = $4 AND class_difficulty = $5', [user_id, groupClass.type, groupClass.start, groupClass.end, groupClass.difficulty], (error) => {
+function delGroupClass(groupClass, res) {
+  pool.query('DELETE FROM group_classes WHERE class_id = $1', [groupClass.id], (error) => {
     if (error) {
       console.error('Error deleting group class:', error);
       res.status(500).send('Internal server error');

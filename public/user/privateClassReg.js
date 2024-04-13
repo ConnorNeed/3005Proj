@@ -1,3 +1,7 @@
+window.onload = function() {
+    getTrainers();
+}
+
 function getTrainers() {
     const url = "/user/trainers";
     fetch(url)
@@ -11,8 +15,8 @@ function getTrainers() {
         .then(trainer => {
             const menu = document.getElementById("trainer-menu");
             menu.innerHTML = '"<option value="Any">Any</option>"';
-            trainer.forEach(activity => {
-                const name = trainer.name;
+            trainer.forEach(trainer => {
+                const name = trainer.full_name;
                 const id = trainer.id;
                 menu.innerHTML += `<option value="${id}">${name}</option>`;
             });

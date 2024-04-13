@@ -6,9 +6,8 @@ function refresh() {
     table.children[1].innerHTML = "";
     table = document.getElementById("trainer-avail-table");
     table.children[1].innerHTML = "";
-    getSchedual();
+    getSchedule();
 }
-
 
 function addavailability() {
     const form = document.getElementById("add-form");
@@ -63,15 +62,15 @@ async function deleteRow(id) {
     }
 }
 
-async function getSchedual() {
-    const url = "/trainer/getSchedual";
+async function getSchedule() {
+    const url = "/trainer/getSchedule";
     try {
         const response = await fetch(url);
         if (response.ok) {
-            const schedual = await response.json();
-            const availability = schedual.availability;
-            const groupClasses = schedual.groupClasses;
-            const privateClasses = schedual.privateClasses;
+            const schedule = await response.json();
+            const availability = schedule.availability;
+            const groupClasses = schedule.groupClasses;
+            const privateClasses = schedule.privateClasses;
             const classTable = document.getElementById("trainer-classes-table");
             const availabilityTable = document.getElementById("trainer-avail-table");
             console.log(availability);
