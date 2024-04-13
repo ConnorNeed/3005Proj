@@ -130,3 +130,16 @@ CREATE TABLE invoice_items (
     item_id INT REFERENCES priceList (item_id),
     quantity INT
 );
+
+CREATE TABLE equipment (
+    equipment_id SERIAL PRIMARY KEY,
+    equipment_name VARCHAR(255)
+);
+
+CREATE TABLE work_orders (
+    work_order_id SERIAL PRIMARY KEY,
+    equipment_id INT REFERENCES equipment (equipment_id),
+    problem_description VARCHAR(255),
+    reported_by INT REFERENCES admins (admin_id),
+    completed BOOLEAN
+);

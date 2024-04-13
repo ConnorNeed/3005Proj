@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Equipment Page</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .add-button {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Equipment Page</h1>
+    <form id="add-workorder">
+        <select name="Items" id="equipment-menu">
+            <option value="None">Select Item...</option>
+        </select>
+        <input type="text" id="desc" name="desc" value="Issue..."></input>
+        <button class="add-button" onclick="addWorkOrder()">Add Work Order</button>
+    </form>
+    <table id="admin-equipment-table">
+        <thead>
+            <tr>
+                <th>Work Order Id</th>
+                <th>Equipment</th>
+                <th>Problem</th>
+                <th>Reported By</th>
+                <th> </th>
+            </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+    </table>
+    <div id="nav_buttons">
+        <a href="/dashboard"><button>Home</button></a>
+    </div>
+    <script src="equipment.js"></script>
+</body>
+</html>

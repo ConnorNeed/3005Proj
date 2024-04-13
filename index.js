@@ -418,6 +418,53 @@ app.post('/admin/pay', async (req, res) => {
   payInvoice(user_id, req.body.invoice_id, res);
 });
 
+// equipment page
+app.get('/admin/equipment', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'equipment.html'));
+});
+app.get('/admin/equipmentList', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  sendEquipment(res);
+});
+app.post('/admin/equipment', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  addWorkOrder(req.user.id ,req.body, res);
+});
+app.post('/admin/completeWorkOrder', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  completeWorkOrder(req.body.order_id, res);
+});
+app.get('/admin/workOrders', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  sendWorkOrders(res);
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
@@ -817,7 +864,6 @@ async function saveInvoice (user_id, invoice, res) {
     return;
   }
 }
-
 // payment functions
 async function payInvoice(user_id, id, res) {
   var result = await pool.query('SELECT SUM(invoice_items.quantity * priceList.price) AS amount FROM invoices JOIN invoice_items ON invoice_items.invoice_id = invoices.invoice_id JOIN priceList ON invoice_items.item_id = priceList.item_id JOIN user_profiles ON invoices.user_id = user_profiles.id WHERE invoices.invoice_id=$1 GROUP BY invoices.invoice_id', [id]);
@@ -839,6 +885,45 @@ function sendOutstandingInvoices(res) {
   pool.query('SELECT invoices.invoice_id, full_name, SUM(invoice_items.quantity * priceList.price) AS amount FROM invoices JOIN invoice_items ON invoice_items.invoice_id = invoices.invoice_id JOIN priceList ON invoice_items.item_id = priceList.item_id JOIN user_profiles ON invoices.user_id = user_profiles.id LEFT JOIN transactions ON invoices.invoice_id = transactions.invoice_id WHERE transactions.invoice_id IS NULL GROUP BY invoices.invoice_id, full_name', (error, result) => {
     if (error) {
       console.error('Error fetching invoices:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.json(result.rows);
+  });
+}
+// equipment functions
+function sendEquipment(res) {
+  pool.query('SELECT * FROM equipment', (error, result) => {
+    if (error) {
+      console.error('Error fetching equipment:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.json(result.rows);
+  });
+}
+function addWorkOrder(user_id, workOrder, res) {
+  pool.query('INSERT INTO work_orders (equipment_id, problem_description, reported_by, completed) VALUES ($1, $2, $3, false)', [workOrder.equipment, workOrder.description, user_id], (error) => {
+    if (error) {
+      console.error('Error saving work order:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
+async function completeWorkOrder(order_id, res) {
+  var result = await pool.query('UPDATE work_orders SET completed = true WHERE work_order_id = $1', [order_id]);
+  if (result.error) {
+    res.sendStatus(500);
+    return;
+  }
+  res.sendStatus(200);
+}
+function sendWorkOrders(res) {
+  pool.query('SELECT work_order_id, equipment.equipment_name, problem_description, full_name AS reported_by FROM work_orders JOIN equipment ON equipment.equipment_id=work_orders.equipment_id JOIN admins ON work_orders.reported_by=admins.admin_id WHERE completed=false', (error, result) => {
+    if (error) {
+      console.error('Error fetching work orders:', error);
       res.status(500).send('Internal server error');
       return;
     }
