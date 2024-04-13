@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Schedule</title>
+    <title>Room Management</title>
     <style>
         table {
             border-collapse: collapse;
@@ -21,31 +21,26 @@
     </style>
 </head>
 <body>
-    <h1>Schedule</h1>
+    <h1>Rooms</h1>
     <div id="add-form">
-        <select name="trainer" id="trainer-menu">
-            <option value="None">Select Trainer...</option>
+        <select name="user" id="user-menu">
+            <option value="None">Select User...</option>
         </select>
-        <select name="class_type" id="class_type">
-            <option value="Select Type">Select Type</option>
-            <option value="Yoga">Yoga</option>
-            <option value="Cycling">Cycling</option>
-            <option value="Lifting">Lifting</option>
-            <option value="Block off">Block off</option>
+        <select name="room" id="room-menu">
+            <option value="None">Select Room...</option>
         </select>
         <input type="datetime-local" id="start_time" name="start_time"></input>
         <input type="datetime-local" id="start_time" name="end_time"></input>
-        <input type="number" id="difficulty" name="difficulty_rating" value="0"></input>
     </div>
     <button class="add-button" onclick="addRow()">Add Class</button>
-    <table id="admin-classes-table">
+    <table id="admin-roomBookings-table">
         <thead>
             <tr>
-                <th>Trainer</th>
-                <th>Type</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Difficulty</th>
+                <th> </th>
+                <th> </th>
+                <th> </th>
+                <th> </th>
+                <th> </th>
                 <th> </th>
             </tr>
         </thead>
@@ -54,6 +49,6 @@
     <div id="nav_buttons">
         <a href="/dashboard"><button>Home</button></a>
     </div>
-    <script src="classes.js"></script>
+    <script src="rooms.js"></script>
 </body>
 </html>

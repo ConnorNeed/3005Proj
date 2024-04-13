@@ -56,7 +56,7 @@ function sendWorkOrder(equipment, description) {
         .then(response => {
             if (response.ok) {
                 alert("Work order added");
-                //refresh();
+                refresh();
             } else {
                 console.error('Failed to add work order:', response.statusText);
             }

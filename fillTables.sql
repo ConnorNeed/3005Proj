@@ -16,3 +16,10 @@ INSERT INTO equipment (equipment_name) VALUES ('Elliptical');
 INSERT INTO equipment (equipment_name) VALUES ('Stationary Bike');
 INSERT INTO equipment (equipment_name) VALUES ('Rowing Machine');
 INSERT INTO equipment (equipment_name) VALUES ('Weight Machines');
+
+INSERT INTO rooms (room_name, room_capacity) VALUES ('Main Room', 10);
+INSERT INTO rooms (room_name, room_capacity) VALUES ('Weight Room', 20);
+INSERT INTO rooms (room_name, room_capacity) VALUES ('Cardio Room', 15);
+INSERT INTO rooms (room_name, room_capacity) VALUES ('Room 1', 30);
+INSERT INTO rooms (room_name, room_capacity) VALUES ('Room 2', 5);
+INSERT INTO rooms (room_name, room_capacity) VALUES ('Room 3', 10);

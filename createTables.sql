@@ -143,3 +143,17 @@ CREATE TABLE work_orders (
     reported_by INT REFERENCES admins (admin_id),
     completed BOOLEAN
 );
+
+CREATE TABLE rooms (
+    room_id SERIAL PRIMARY KEY,
+    room_name VARCHAR(255),
+    room_capacity INT
+);
+
+CREATE TABLE room_reservations (
+    reservation_id SERIAL PRIMARY KEY,
+    room_id INT REFERENCES rooms (room_id),
+    user_id INT REFERENCES user_profiles (id),
+    start_time TIMESTAMP,
+    end_time TIMESTAMP
+);

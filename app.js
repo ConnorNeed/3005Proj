@@ -37,6 +37,10 @@ app.get('/register', (req, res) => {
 });
 
 app.use(session({
+  store: new pgSession({
+    pool: pool,
+    tableName: 'session',
+  }),
   secret: 'your_secret_key',
   resave: false,
   saveUninitialized: false,
@@ -239,7 +243,7 @@ app.post('/user/privateClassReg', async (req, res) => {
     res.redirect('/login');
   }
   const userId = req.user.id;
-  addPrivateClass(userId, req.body.trainer, req.body.start, req.body.end, res);
+  registerPrivateClass(userId, req.body.trainer, req.body.start, req.body.end, res);
 });
 
 
@@ -417,7 +421,6 @@ app.post('/admin/pay', async (req, res) => {
   const user_id = req.user.id
   payInvoice(user_id, req.body.invoice_id, res);
 });
-
 // equipment page
 app.get('/admin/equipment', async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -463,6 +466,52 @@ app.get('/admin/workOrders', async (req, res) => {
     res.redirect('/dashboard');
   }
   sendWorkOrders(res);
+});
+// rooms page
+app.get('/admin/rooms', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'rooms.html'));
+});
+app.get('/admin/roomList', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  sendRooms(res);
+});
+app.post('/admin/cancelBooking', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  cancelBooking(req.body, res);
+});
+app.post('/admin/bookRoom', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  bookRoom(req.body, res);
+});
+app.get('/admin/roomBookings', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  sendBookings(res);
 });
 
 app.listen(PORT, () => {
@@ -924,6 +973,53 @@ function sendWorkOrders(res) {
   pool.query('SELECT work_order_id, equipment.equipment_name, problem_description, full_name AS reported_by FROM work_orders JOIN equipment ON equipment.equipment_id=work_orders.equipment_id JOIN admins ON work_orders.reported_by=admins.admin_id WHERE completed=false', (error, result) => {
     if (error) {
       console.error('Error fetching work orders:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.json(result.rows);
+  });
+}
+// room functions
+function sendRooms(res) {
+  pool.query('SELECT * FROM rooms', (error, result) => {
+    if (error) {
+      console.error('Error fetching rooms:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.json(result.rows);
+  });
+}
+async function bookRoom(booking, res) {
+  var result = await pool.query('SELECT count(room_id) FROM room_reservations WHERE room_id = $1 AND (end_time > $2 AND start_time < $3)', [booking.room, booking.start, booking.end]);
+  var count = result.rows[0];
+  if (count > 0) {
+    res.sendStatus(299);
+    return;
+  }
+  pool.query('INSERT INTO room_reservations (room_id, user_id, start_time, end_time) VALUES ($1, $2, $3, $4)', [booking.room, booking.user, booking.start, booking.end], (error) => {
+    if (error) {
+      console.error('Error saving room reservation:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
+async function cancelBooking(booking, res) {
+  pool.query('DELETE FROM room_reservations WHERE reservation_id=$1', [booking.booking_id], (error) => {
+    if (error) {
+      console.error('Error deleting room reservation:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
+function sendBookings(res) {
+  pool.query('SELECT reservation_id, rooms.room_name, full_name AS booked_by, start_time, end_time FROM room_reservations JOIN rooms ON rooms.room_id=room_reservations.room_id JOIN user_profiles ON room_reservations.user_id=user_profiles.id', (error, result) => {
+    if (error) {
+      console.error('Error fetching room reservations:', error);
       res.status(500).send('Internal server error');
       return;
     }

@@ -2,7 +2,7 @@
 window.onload = refresh;
 
 function refresh () {
-    var table = document.getElementById("trainer-classes-table");
+    var table = document.getElementById("admin-classes-table");
     table.children[1].innerHTML = "";
     getTrainers();
     getClasses();
