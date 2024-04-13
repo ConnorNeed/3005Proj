@@ -84,6 +84,13 @@ app.post('/login', passport.authenticate('local', {
   failureFlash: false,
 }));
 
+app.post('/logout', function(req, res, next){
+  req.logout(function(err) {
+    if (err) { return next(err); }
+    res.redirect('/');
+  });
+});
+
 app.post('/register', async (req, res) => {
   bcrypt.hash(req.body.password, 10, function (err, hash) {
     if (err) {
