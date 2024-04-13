@@ -239,6 +239,41 @@ app.post('/user/privateClassReg', async (req, res) => {
 });
 
 // trainer pages
+// schedual page
+app.get('/trainer/schedual', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'trainer', 'schedual.html'));
+});
+app.get('/trainer/getSchedual', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 1) {
+    res.redirect('/dashboard');
+  }
+  sendSchedual(req.user.id, res);
+});
+app.post('/trainer/addAvailibility', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 1) {
+    res.redirect('/dashboard');
+  }
+  saveAvailibility(req.user.id, req.body, res);
+});
+app.post('/trainer/deleteAvailibility', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 1) {
+    res.redirect('/dashboard');
+  }
+  deleteAvailibility(req.body.id, res);
+});
+
 // group classes page
 app.get('/trainer/groupClasses', async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -278,15 +313,6 @@ app.get('/schedual', async (req, res) => {
     res.redirect('/dashboard');
   }
   res.sendFile(path.join(__dirname, 'public', 'trainer', 'schedual.html'));
-});
-app.get('/trainer/privateClasses', async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.redirect('/login');
-  }
-  if (req.user.usertype != 1) {
-    res.redirect('/dashboard');
-  }
-  sendPrivateClasses(req.user.id, res);
 });
 
 // member search page
@@ -338,6 +364,7 @@ function activityTypeTableInfo(activityType) {
 }
 
 //postgres functions
+//General functions
 function register(email, password, req, res) {
   pool.query('INSERT into login (email, password_hash, usertype) VALUES ($1, $2, 0) RETURNING *', [email, password], (error, result) => {
     if (error) {
@@ -399,6 +426,9 @@ function sendUserInfo(user_id, res) {
   });
 }
 
+
+//member functions
+//goal functions
 function clearGoals(user_id) {
   pool.query('DELETE FROM user_goals WHERE user_id = $1', [user_id], (error) => {
     if (error) {
@@ -407,7 +437,6 @@ function clearGoals(user_id) {
     }
   });
 }
-
 function saveGoals(user_id, goals) {
   goals.forEach(goal => {
     var goalType = goal.goalType;
@@ -451,6 +480,7 @@ async function sendGoals(user_id, res) {
   }
   res.json(goals);
 }
+//activity functions
 async function sendActivities(user_id, res) {
   var activities = [];
   for (var activityType = 0; activityType < 3; activityType++) {
@@ -466,7 +496,6 @@ async function sendActivities(user_id, res) {
   }
   res.json(activities);
 }
-
 function saveActivity(user_id, activity) {
   const activityType = activity.type;
   pool.query('INSERT INTO activities (user_id, activity_type) VALUES ($1, $2) RETURNING activity_id', [user_id, activityType], (error, result) => {
@@ -485,7 +514,6 @@ function saveActivity(user_id, activity) {
     }
   });
 }
-
 function delActivity(user_id, activity) {
   const activityType = activity.type;
   const tableInfo = activityTypeTableInfo(activityType);
@@ -496,82 +524,7 @@ function delActivity(user_id, activity) {
     }
   });
 }
-
-function sendGroupClasses(user_id, res) {
-  pool.query('SELECT class_type, start_time, end_time, class_difficulty FROM group_classes WHERE trainer_id = $1', [user_id], (error, result) => {
-    if (error) {
-      console.error('Error fetching group classes:', error);
-      res.status(500).send('Internal server error');
-      return;
-    } else {
-      res.json(result.rows);
-    }
-  });
-}
-function saveGroupClass(user_id, groupClass, res) {
-  pool.query('INSERT INTO group_classes (trainer_id, class_type, start_time, end_time, class_difficulty) VALUES ($1, $2, $3, $4, $5)', [user_id, groupClass.type, groupClass.start, groupClass.end, groupClass.difficulty], (error) => {
-    if (error) {
-      console.error('Error saving group class:', error);
-      res.status(500).send('Internal server error');
-      return;
-    }
-    res.sendStatus(200);
-  });
-}
-function delGroupClass(user_id, groupClass, res) {
-  pool.query('DELETE FROM group_classes WHERE trainer_id = $1 AND class_type = $2 AND start_time = $3 AND end_time = $4 AND class_difficulty = $5', [user_id, groupClass.type, groupClass.start, groupClass.end, groupClass.difficulty], (error) => {
-    if (error) {
-      console.error('Error deleting group class:', error);
-      res.status(500).send('Internal server error');
-      return;
-    }
-    res.sendStatus(200);
-  });
-}
-
-function sendTrainers(res) {
-  pool.query('SELECT id, full_name FROM trainers JOIN user_profiles ON user_profiles.id=trainers.trainer_id', (error, result) => {
-    if (error) {
-      console.error('Error fetching trainers:', error);
-      res.status(500).send('Internal server error');
-      return;
-    }
-    res.json(result.rows);
-  });
-}
-
-async function addPrivateClass(user_id, trainer_id, start, end, res) {
-  var result = await pool.query('SELECT count(trainer_id) FROM private_classes WHERE trainer_id = $1 AND (end_time > $2 AND start_time < $3)', [trainer_id, start, end]);
-  var count = result.rows[0];
-  result = await pool.query('SELECT count(trainer_id) FROM group_classes WHERE trainer_id = $1 AND (end_time > $2 AND start_time < $3)', [trainer_id, start, end]);
-  count += result.rows[0];
-  if (count > 0) {
-    res.sendStatus(299);
-    return;
-  }
-  
-  pool.query('INSERT INTO private_classes (user_id, trainer_id, start_time, end_time) VALUES ($1, $2, $3, $4)', [user_id, trainer_id, start, end], (error) => {
-    if (error) {
-      console.error('Error saving private class:', error);
-      res.status(500).send('Internal server error');
-      return;
-    }
-    res.sendStatus(200);
-  });
-}
-
-function sendPrivateClasses(trainer_id, res) {
-  pool.query('SELECT start_time, end_time, user_profiles.full_name FROM private_classes JOIN user_profiles ON user_profiles.id = private_classes.user_id WHERE private_classes.trainer_id = $1', [trainer_id], (error, result) => {
-    if (error) {
-      console.error('Error fetching private classes:', error);
-      res.status(500).send('Internal server error');
-      return;
-    }
-    res.json(result.rows);
-  });
-}
-
-//user register group classes
+//register group classes
 async function sendAllGroupClasses(res) {
   var result = await pool.query("SELECT group_classes.class_id, class_type, start_time, end_time, class_difficulty, user_profiles.full_name AS name, rating FROM group_classes JOIN user_profiles ON group_classes.trainer_id = user_profiles.id JOIN trainers ON trainers.trainer_id = group_classes.trainer_id");
   res.json(result.rows);
@@ -603,6 +556,71 @@ async function deregisterForClass(user_id, class_id, res) {
     }
     res.sendStatus(200);
   });
+}
+// private class functions
+function sendTrainers(res) {
+  pool.query('SELECT id, full_name FROM trainers JOIN user_profiles ON user_profiles.id=trainers.trainer_id', (error, result) => {
+    if (error) {
+      console.error('Error fetching trainers:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.json(result.rows);
+  });
+}
+async function registerPrivateClass(user_id, trainer_id, start, end, res) {
+  var result = await pool.query('SELECT count(trainer_id) FROM trainer_availibility WHERE trainer_id = $1 AND (start_time <= $2 AND end_time > $3)', [trainer_id, start, end]);
+  if (result.rows[0].count == 0) {
+    res.sendStatus(299);
+    return;
+  }
+  result = await pool.query('SELECT count(trainer_id) FROM private_classes WHERE trainer_id = $1 AND (end_time > $2 AND start_time < $3)', [trainer_id, start, end]);
+  var count = result.rows[0];
+  result = await pool.query('SELECT count(trainer_id) FROM group_classes WHERE trainer_id = $1 AND (end_time > $2 AND start_time < $3)', [trainer_id, start, end]);
+  count += result.rows[0];
+  if (count > 0) {
+    res.sendStatus(299);
+    return;
+  }
+  
+  pool.query('INSERT INTO private_classes (user_id, trainer_id, start_time, end_time) VALUES ($1, $2, $3, $4)', [user_id, trainer_id, start, end], (error) => {
+    if (error) {
+      console.error('Error saving private class:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
+
+
+//trainer functions
+//availibility functions
+function saveAvailibility(user_id, slot, res) {
+  pool.query('INSERT INTO trainer_availibility (trainer_id, class_type, start_time, end_time, class_difficulty) VALUES ($1, $2, $3, $4, $5)', [user_id, slot.start, slot.end], (error) => {
+    if (error) {
+      console.error('Error saving group class:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
+function deleteAvailibility(slotId, res) {
+  pool.query('DELETE FROM trainer_availibility WHERE availability_id = $1', [slotId], (error) => {
+    if (error) {
+      console.error('Error deleting group class:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
+async function sendSchedual(user_id, res) {
+  var availibility = await pool.query('SELECT * FROM trainer_availibility WHERE trainer_id = $1 SORT BY start_time', [user_id]);
+  var privateClasses = await pool.query('SELECT start_time, end_time, user_profiles.full_name AS name FROM private_classes JOIN user_profiles ON private_classes.user_id = user_profiles.user_id WHERE trainer_id = $1 SORT BY start_time', [user_id]);
+  var groupClasses = await pool.query('SELECT class_type, start_time, end_time, COUNT(class_members.user_id) AS member_count FROM group_classes JOIN class_members ON class_members.class_id=group_classes.class_id WHERE trainer_id = $1 GROUP BY class_members.class_id, class_type, start_time, end_time ORDER BY start_time', [user_id]);
+  res.json({availibility: availibility.rows, privateClasses: privateClasses.rows, groupClasses: groupClasses.rows});
 }
 
 //trainer search functions
@@ -637,4 +655,39 @@ async function getActivities(user_id) {
     activities = activities.concat(result.rows);
   }
   return activities;
+}
+
+
+
+// admin functions
+function sendGroupClasses(user_id, res) {
+  pool.query('SELECT class_type, start_time, end_time, class_difficulty FROM group_classes WHERE trainer_id = $1', [user_id], (error, result) => {
+    if (error) {
+      console.error('Error fetching group classes:', error);
+      res.status(500).send('Internal server error');
+      return;
+    } else {
+      res.json(result.rows);
+    }
+  });
+}
+function saveGroupClass(user_id, groupClass, res) {
+  pool.query('INSERT INTO group_classes (trainer_id, class_type, start_time, end_time, class_difficulty) VALUES ($1, $2, $3, $4, $5)', [user_id, groupClass.type, groupClass.start, groupClass.end, groupClass.difficulty], (error) => {
+    if (error) {
+      console.error('Error saving group class:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
+function delGroupClass(user_id, groupClass, res) {
+  pool.query('DELETE FROM group_classes WHERE trainer_id = $1 AND class_type = $2 AND start_time = $3 AND end_time = $4 AND class_difficulty = $5', [user_id, groupClass.type, groupClass.start, groupClass.end, groupClass.difficulty], (error) => {
+    if (error) {
+      console.error('Error deleting group class:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
 }

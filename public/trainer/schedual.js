@@ -2,44 +2,29 @@
 window.onload = function () {
     var table = document.getElementById("trainer-classes-table");
     table.children[1].innerHTML = "";
-    getClasses();
-    getPrivate();
 }
 
 
-function addRow() {
+function addAvailibility() {
     const form = document.getElementById("add-form");
-    const typeIndex = form.children[0].selectedIndex;
-    const type = form.children[0].value;
-    const start = form.children[1].value;
-    const end = form.children[2].value;
-    const difficulty = form.children[3].value;
+    const start = form.children[0].value;
+    const end = form.children[1].value;
     if (start > end) {
         alert("Start time must be before end time");
         return;
     }
-    if (typeIndex === 0){
-        alert("Please select a class type");
-        return;
-    }
-    addToTable(type, start, end, difficulty);
-    sendClass(typeIndex, start, end, difficulty);
+    sendAvailibility(start, end, difficulty);
 }
 
-function addToTable(type, start, end, difficulty) {
-    var row = document.getElementById("table-body").insertRow();
-    row.innerHTML = '<tr><td>'+type+'</td><td>'+start+'</td><td>'+end+'</td><td>'+difficulty+'</td><td><button onclick="deleteRow(this)">Delete</button></td></tr>';
-}
-
-async function sendClass(type, start, end, difficulty) {
-    const url = "/trainer/addGroupClass";
+async function sendAvailibility(start, end) {
+    const url = "/trainer/addAvailibility";
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({type: type, start: start, end: end, difficulty: difficulty})
+            body: JSON.stringify({start: start, end: end})
         });
         if (response.ok) {
             alert("Class saved successfully");
@@ -51,79 +36,78 @@ async function sendClass(type, start, end, difficulty) {
     }
 }
 
-async function deleteRow(button) {
-    var row = button.parentNode.parentNode;
-    var type = row.cells[0].innerText;
-    var start = row.cells[1].innerText;
-    var end = row.cells[2].innerText;
-    var difficulty = row.cells[3].innerText;
-    if (difficulty === "") {
-        const url = "/trainer/delPrivateClass";
-        body = JSON.stringify({name: type, start: start, end: end});
-    } else {
-        const url = "/trainer/delGroupClass";
-        body = JSON.stringify({type: +type, start: start, end: end, difficulty: +difficulty});
-    }
+async function deleteRow(id) {
+    const url = "/trainer/deleteAvailibility";
     try {
         const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: body
+            body: JSON.stringify({id: id})
         });
         if (response.ok) {
             alert("Class deleted successfully");
         } else {
-            console.error('Failed to deleted class:', response.statusText);
+            console.error('Failed to delete class:', response.statusText);
         }
     } catch (error) {
         console.error("An error occurred while deleting the class:", error);
     }
-    row.parentNode.removeChild(row);
 }
 
-function getClasses() {
-    const url = "/trainer/groupClasses";
-    fetch(url)
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                console.error("Failed to get classes: ", response.statusText);
+async function getSchedual() {
+    const url = "/trainer/getSchedual";
+    try {
+        const response = await fetch(url);
+        if (response.ok) {
+            const schedual = await response.json();
+            const availibility = schedual.availibility;
+            const groupClasses = schedual.groupClasses;
+            const privateClasses = schedual.privateClasses;
+            const classTable = document.getElementById("trainer-classes-table");
+            const availibilityTable = document.getElementById("trainer-avail-table");
+            for (let i = 0; i < availibility.length; i++) {
+                const row = availibilityTable.insertRow(-1);
+                row.insertCell(0).innerText = availibility[i].start;
+                row.insertCell(1).innerText = availibility[i].end;
+                row.insertCell(2).innerHTML = `<button onclick='deleteRow(${availibility[i].availability_id})'>Delete</button>`;
             }
-        })
-        .then(classes => {
-            classes.forEach(c => {
-                var type = +c.class_type;
-                if (type === 0) {
-                    type = "Yoga";
-                } else if (type === 1) {
-                    type = "Cycling";
-                } else if (type === 2) {
-                    type = "Lifting";
-                } else if (type === 3) {
-                    type = "Block off";
-                } else {
-                    console.error("Invalid type");
+            var groupPtr = 0;
+            var privatePtr = 0;
+            for (let i=0; i < groupClasses.length+privateClasses.length; i++) {
+                const row = classTable.insertRow(-1);
+                if(groupClasses[groupPtr].start_time < privateClasses[privatePtr].start_time) {
+                    row.insertCell(0).innerText = typeToString(groupClasses[groupPtr].class_type);
+                    row.insertCell(1).innerText = groupClasses[groupPtr].start_time;
+                    row.insertCell(2).innerText = groupClasses[groupPtr].end_time;
+                    row.insertCell(3).innerText = groupClasses[groupPtr].difficulty;
+                    row.insertCell(4).innerText = groupClasses[groupPtr].member_count;
+                    groupPtr++;
+                }else {
+                    row.insertCell(0).innerText = privateClasses[privatePtr].start_time;
+                    row.insertCell(1).innerText = privateClasses[privatePtr].end_time;
+                    row.insertCell(2).innerText = privateClasses[privatePtr].name;
+                    privatePtr++;
                 }
-                addToTable(type, c.start_time, c.end_time, c.class_difficulty);
-            });
-        });
-}
-function getPrivate() {
-    const url = "/trainer/privateClasses";
-    fetch(url)
-        .then(response => {
-            if (response.ok) {
-                return response.json();
-            } else {
-                console.error("Failed to get private classes: ", response.statusText);
             }
-        })
-        .then(classes => {
-            classes.forEach(c => {
-                addToTable(c.name, c.start_time, c.end_time, "");
-            });
-        });
+        } else {
+            console.error('Error fetching user profile:', response.statusText);
+        }
+    } catch (error) {
+        console.error('Error fetching user profile:', error);
+    }
+}
+
+function typeToString(type) {
+    if (type == 0) {
+        return "Yoga";
+    } else if(type == 1) {
+        return "Cycling";
+    } else if(type == 2) {
+        return "Lifting";
+    } else {
+        console.error("Invalid type");
+        return "";
+    }
 }

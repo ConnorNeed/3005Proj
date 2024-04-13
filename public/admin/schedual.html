@@ -23,22 +23,18 @@
 <body>
     <h1>Schedual</h1>
     <div id="add-form">
+        <select name="class_type" id="class_type">
+            <option value="Select Type">Select Type</option>
+            <option value="Yoga">Yoga</option>
+            <option value="Cycling">Cycling</option>
+            <option value="Lifting">Lifting</option>
+            <option value="Block off">Block off</option>
+        </select>
         <input type="datetime-local" id="start_time" name="start_time"></input>
         <input type="datetime-local" id="start_time" name="end_time"></input>
+        <input type="number" id="difficulty" name="difficulty_rating" value="0"></input>
     </div>
     <button class="add-button" onclick="addRow()">Add Class</button>
-    <table id="trainer-avail-table">
-        <thead>
-            <tr>
-                <th>Type</th>
-                <th> </th>
-                <th> </th>
-                <th> </th>
-                <th> </th>
-            </tr>
-        </thead>
-        <tbody id="avail-table-body"></tbody>
-    </table>
     <table id="trainer-classes-table">
         <thead>
             <tr>
@@ -49,7 +45,7 @@
                 <th> </th>
             </tr>
         </thead>
-        <tbody id="class-table-body"></tbody>
+        <tbody id="table-body"></tbody>
     </table>
     <div id="nav_buttons">
         <a href="/dashboard"><button>Home</button></a>

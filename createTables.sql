@@ -83,6 +83,13 @@ CREATE TABLE group_classes (
     class_difficulty SMALLINT
 );
 
+CREATE TABLE trainer_availability (
+    availability_id SERIAL PRIMARY KEY,
+    trainer_id INT REFERENCES trainers (trainer_id) ON DELETE CASCADE,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP
+);
+
 CREATE TABLE class_members (
     class_id INT REFERENCES group_classes (class_id) ON DELETE CASCADE,
     user_id INT REFERENCES user_profiles (id) ON DELETE CASCADE
