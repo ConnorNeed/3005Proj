@@ -1,11 +1,16 @@
 
-window.onload = function () {
+window.onload = refresh;
+
+function refresh() {
     var table = document.getElementById("trainer-classes-table");
     table.children[1].innerHTML = "";
+    table = document.getElementById("trainer-avail-table");
+    table.children[1].innerHTML = "";
+    getSchedual();
 }
 
 
-function addAvailibility() {
+function addavailability() {
     const form = document.getElementById("add-form");
     const start = form.children[0].value;
     const end = form.children[1].value;
@@ -13,11 +18,11 @@ function addAvailibility() {
         alert("Start time must be before end time");
         return;
     }
-    sendAvailibility(start, end, difficulty);
+    sendavailability(start, end);
 }
 
-async function sendAvailibility(start, end) {
-    const url = "/trainer/addAvailibility";
+async function sendavailability(start, end) {
+    const url = "/trainer/addavailability";
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -28,6 +33,7 @@ async function sendAvailibility(start, end) {
         });
         if (response.ok) {
             alert("Class saved successfully");
+            refresh();
         } else {
             console.error('Failed to save class:', response.statusText);
         }
@@ -37,7 +43,7 @@ async function sendAvailibility(start, end) {
 }
 
 async function deleteRow(id) {
-    const url = "/trainer/deleteAvailibility";
+    const url = "/trainer/deleteavailability";
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -48,6 +54,7 @@ async function deleteRow(id) {
         });
         if (response.ok) {
             alert("Class deleted successfully");
+            refresh();
         } else {
             console.error('Failed to delete class:', response.statusText);
         }
@@ -62,26 +69,28 @@ async function getSchedual() {
         const response = await fetch(url);
         if (response.ok) {
             const schedual = await response.json();
-            const availibility = schedual.availibility;
+            const availability = schedual.availability;
             const groupClasses = schedual.groupClasses;
             const privateClasses = schedual.privateClasses;
             const classTable = document.getElementById("trainer-classes-table");
-            const availibilityTable = document.getElementById("trainer-avail-table");
-            for (let i = 0; i < availibility.length; i++) {
-                const row = availibilityTable.insertRow(-1);
-                row.insertCell(0).innerText = availibility[i].start;
-                row.insertCell(1).innerText = availibility[i].end;
-                row.insertCell(2).innerHTML = `<button onclick='deleteRow(${availibility[i].availability_id})'>Delete</button>`;
+            const availabilityTable = document.getElementById("trainer-avail-table");
+            console.log(availability);
+            for (let i = 0; i < availability.length; i++) {
+                const row = availabilityTable.insertRow(-1);
+                row.insertCell(0).innerText = availability[i].start_time;
+                row.insertCell(1).innerText = availability[i].end_time;
+                row.insertCell(2).innerHTML = `<button onclick='deleteRow(${availability[i].availability_id})'>Delete</button>`;
             }
             var groupPtr = 0;
             var privatePtr = 0;
             for (let i=0; i < groupClasses.length+privateClasses.length; i++) {
                 const row = classTable.insertRow(-1);
-                if(groupClasses[groupPtr].start_time < privateClasses[privatePtr].start_time) {
+                console.log(groupClasses[groupPtr]);
+                if(privatePtr >= privateClasses.length-1 || (groupPtr < groupClasses.length-1 && groupClasses[groupPtr].start_time < privateClasses[privatePtr].start_time)) {
                     row.insertCell(0).innerText = typeToString(groupClasses[groupPtr].class_type);
                     row.insertCell(1).innerText = groupClasses[groupPtr].start_time;
                     row.insertCell(2).innerText = groupClasses[groupPtr].end_time;
-                    row.insertCell(3).innerText = groupClasses[groupPtr].difficulty;
+                    row.insertCell(3).innerText = groupClasses[groupPtr].class_difficulty;
                     row.insertCell(4).innerText = groupClasses[groupPtr].member_count;
                     groupPtr++;
                 }else {

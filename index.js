@@ -255,23 +255,23 @@ app.get('/trainer/getSchedual', async (req, res) => {
   }
   sendSchedual(req.user.id, res);
 });
-app.post('/trainer/addAvailibility', async (req, res) => {
+app.post('/trainer/addavailability', async (req, res) => {
   if (!req.isAuthenticated()) {
     res.redirect('/login');
   }
   if (req.user.usertype != 1) {
     res.redirect('/dashboard');
   }
-  saveAvailibility(req.user.id, req.body, res);
+  saveavailability(req.user.id, req.body, res);
 });
-app.post('/trainer/deleteAvailibility', async (req, res) => {
+app.post('/trainer/deleteavailability', async (req, res) => {
   if (!req.isAuthenticated()) {
     res.redirect('/login');
   }
   if (req.user.usertype != 1) {
     res.redirect('/dashboard');
   }
-  deleteAvailibility(req.body.id, res);
+  deleteavailability(req.body.id, res);
 });
 
 // group classes page
@@ -569,7 +569,7 @@ function sendTrainers(res) {
   });
 }
 async function registerPrivateClass(user_id, trainer_id, start, end, res) {
-  var result = await pool.query('SELECT count(trainer_id) FROM trainer_availibility WHERE trainer_id = $1 AND (start_time <= $2 AND end_time > $3)', [trainer_id, start, end]);
+  var result = await pool.query('SELECT count(trainer_id) FROM trainer_availability WHERE trainer_id = $1 AND (start_time <= $2 AND end_time > $3)', [trainer_id, start, end]);
   if (result.rows[0].count == 0) {
     res.sendStatus(299);
     return;
@@ -595,9 +595,9 @@ async function registerPrivateClass(user_id, trainer_id, start, end, res) {
 
 
 //trainer functions
-//availibility functions
-function saveAvailibility(user_id, slot, res) {
-  pool.query('INSERT INTO trainer_availibility (trainer_id, class_type, start_time, end_time, class_difficulty) VALUES ($1, $2, $3, $4, $5)', [user_id, slot.start, slot.end], (error) => {
+//availability functions
+function saveavailability(user_id, slot, res) {
+  pool.query('INSERT INTO trainer_availability (trainer_id, start_time, end_time) VALUES ($1, $2, $3)', [user_id, slot.start, slot.end], (error) => {
     if (error) {
       console.error('Error saving group class:', error);
       res.status(500).send('Internal server error');
@@ -606,8 +606,8 @@ function saveAvailibility(user_id, slot, res) {
     res.sendStatus(200);
   });
 }
-function deleteAvailibility(slotId, res) {
-  pool.query('DELETE FROM trainer_availibility WHERE availability_id = $1', [slotId], (error) => {
+function deleteavailability(slotId, res) {
+  pool.query('DELETE FROM trainer_availability WHERE availability_id = $1', [slotId], (error) => {
     if (error) {
       console.error('Error deleting group class:', error);
       res.status(500).send('Internal server error');
@@ -617,10 +617,10 @@ function deleteAvailibility(slotId, res) {
   });
 }
 async function sendSchedual(user_id, res) {
-  var availibility = await pool.query('SELECT * FROM trainer_availibility WHERE trainer_id = $1 SORT BY start_time', [user_id]);
-  var privateClasses = await pool.query('SELECT start_time, end_time, user_profiles.full_name AS name FROM private_classes JOIN user_profiles ON private_classes.user_id = user_profiles.user_id WHERE trainer_id = $1 SORT BY start_time', [user_id]);
-  var groupClasses = await pool.query('SELECT class_type, start_time, end_time, COUNT(class_members.user_id) AS member_count FROM group_classes JOIN class_members ON class_members.class_id=group_classes.class_id WHERE trainer_id = $1 GROUP BY class_members.class_id, class_type, start_time, end_time ORDER BY start_time', [user_id]);
-  res.json({availibility: availibility.rows, privateClasses: privateClasses.rows, groupClasses: groupClasses.rows});
+  var availability = await pool.query('SELECT * FROM trainer_availability WHERE trainer_id = $1 ORDER BY start_time', [user_id]);
+  var privateClasses = await pool.query('SELECT start_time, end_time, user_profiles.full_name AS name FROM private_classes JOIN user_profiles ON private_classes.user_id = user_profiles.id WHERE trainer_id = $1 ORDER BY start_time', [user_id]);
+  var groupClasses = await pool.query('SELECT class_type, start_time, end_time, class_difficulty, COUNT(class_members.user_id) AS member_count FROM group_classes LEFT JOIN class_members ON class_members.class_id=group_classes.class_id WHERE trainer_id = $1 GROUP BY class_members.class_id, class_type, start_time, end_time, class_difficulty ORDER BY start_time', [user_id]);
+  res.json({availability: availability.rows, privateClasses: privateClasses.rows, groupClasses: groupClasses.rows});
 }
 
 //trainer search functions
