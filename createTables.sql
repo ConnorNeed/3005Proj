@@ -103,3 +103,30 @@ CREATE TABLE private_classes (
     start_time TIMESTAMP,
     end_time TIMESTAMP
 );
+
+CREATE TABLE admins (
+    admin_id INT UNIQUE REFERENCES login (id) ON DELETE CASCADE,
+    full_name VARCHAR(255)
+);
+
+CREATE TABLE priceList (
+    item_id SERIAL PRIMARY KEY,
+    item_name VARCHAR(255),
+    price INT
+);
+
+CREATE TABLE invoices (
+    invoice_id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES user_profiles (id),
+    admin_id INT REFERENCES admins (admin_id)
+);
+CREATE TABLE transactions (
+    transaction_id SERIAL PRIMARY KEY,
+    invoice_id INT REFERENCES invoices (invoice_id),
+    admin_id INT REFERENCES admins (admin_id)
+);
+CREATE TABLE invoice_items (
+    invoice_id INT REFERENCES invoices (invoice_id),
+    item_id INT REFERENCES priceList (item_id),
+    quantity INT
+);

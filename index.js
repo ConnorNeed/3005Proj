@@ -242,6 +242,9 @@ app.post('/user/privateClassReg', async (req, res) => {
   addPrivateClass(userId, req.body.trainer, req.body.start, req.body.end, res);
 });
 
+
+
+
 // trainer pages
 // schedule page
 app.get('/trainer/schedule', async (req, res) => {
@@ -277,8 +280,6 @@ app.post('/trainer/deleteavailability', async (req, res) => {
   }
   deleteavailability(req.body.id, res);
 });
-
-// group classes page
 app.get('/schedule', async (req, res) => {
   if (!req.isAuthenticated()) {
     res.redirect('/login');
@@ -349,6 +350,73 @@ app.get('/admin/classes', async (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'classes.html'));
 });
 
+// invoice page
+app.get('/admin/invoice', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'invoice.html'));
+});
+app.get('/admin/items', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  sendItems(res);
+});
+app.post('/admin/invoice', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  var user_id = req.user.id;
+  saveInvoice(user_id, req.body, res);
+});
+app.get('/admin/users', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  sendUsers(res);
+});
+// payment page
+app.get('/admin/payment', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'payment.html'));
+});
+app.get('/admin/outstandingPayments', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  sendOutstandingInvoices(res);
+});
+app.post('/admin/pay', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  if (req.user.usertype != 2) {
+    res.redirect('/dashboard');
+  }
+  const user_id = req.user.id
+  payInvoice(user_id, req.body.invoice_id, res);
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
@@ -375,6 +443,11 @@ function activityTypeTableInfo(activityType) {
     case 2:
       return { activityTypeTableName: 'lifts', val1Name: 'lift_type', val2Name: 'amount' };
   }
+}
+
+function paymentService(amount) {
+  // this is where you would call a payment service to charge the user
+  return true;
 }
 
 //postgres functions
@@ -674,6 +747,7 @@ async function getActivities(user_id) {
 
 
 // admin functions
+// group classes functions
 function sendGroupClasses(res) {
   pool.query('SELECT user_profiles.full_name, class_id, class_type, start_time, end_time, class_difficulty FROM group_classes JOIN user_profiles ON user_profiles.id = group_classes.trainer_id', (error, result) => {
     if (error) {
@@ -703,5 +777,71 @@ function delGroupClass(groupClass, res) {
       return;
     }
     res.sendStatus(200);
+  });
+}
+// invoice functions
+function sendItems(res) {
+  pool.query('SELECT * FROM priceList', (error, result) => {
+    if (error) {
+      console.error('Error fetching items:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.json(result.rows);
+  });
+}
+function sendUsers(res) {
+  pool.query('SELECT id, full_name FROM user_profiles', (error, result) => {
+    if (error) {
+      console.error('Error fetching users:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.json(result.rows);
+  });
+}
+async function saveInvoice (user_id, invoice, res) {
+  var result = await pool.query('INSERT INTO invoices (user_id, admin_id) VALUES ($1, $2) RETURNING invoice_id', [invoice.user, user_id]);
+  if (result.rows.length == 0) {
+    res.sendStatus(500);
+    return;
+  }
+  var invoice_id = result.rows[0].invoice_id;
+  for (var i = 0; i < invoice.items.length; i++) {
+    result = await pool.query('INSERT INTO invoice_items (invoice_id, item_id, quantity) VALUES ($1, $2, $3)', [invoice_id, invoice.items[i].id, invoice.items[i].quantity]);
+    if (result.error) {
+      res.sendStatus(500);
+      return;
+    }
+    res.sendStatus(200);
+    return;
+  }
+}
+
+// payment functions
+async function payInvoice(user_id, id, res) {
+  var result = await pool.query('SELECT SUM(invoice_items.quantity * priceList.price) AS amount FROM invoices JOIN invoice_items ON invoice_items.invoice_id = invoices.invoice_id JOIN priceList ON invoice_items.item_id = priceList.item_id JOIN user_profiles ON invoices.user_id = user_profiles.id WHERE invoices.invoice_id=$1 GROUP BY invoices.invoice_id', [id]);
+  var amount = result.rows[0].amount;
+  if (!paymentService(amount)) {
+    res.sendStatus(500);
+    return;
+  }
+  pool.query('INSERT INTO transactions (invoice_id, admin_id) VALUES ($1, $2)', [id, user_id], (error) => {
+    if (error) {
+      console.error('Error saving payment:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.sendStatus(200);
+  });
+}
+function sendOutstandingInvoices(res) {
+  pool.query('SELECT invoices.invoice_id, full_name, SUM(invoice_items.quantity * priceList.price) AS amount FROM invoices JOIN invoice_items ON invoice_items.invoice_id = invoices.invoice_id JOIN priceList ON invoice_items.item_id = priceList.item_id JOIN user_profiles ON invoices.user_id = user_profiles.id LEFT JOIN transactions ON invoices.invoice_id = transactions.invoice_id WHERE transactions.invoice_id IS NULL GROUP BY invoices.invoice_id, full_name', (error, result) => {
+    if (error) {
+      console.error('Error fetching invoices:', error);
+      res.status(500).send('Internal server error');
+      return;
+    }
+    res.json(result.rows);
   });
 }

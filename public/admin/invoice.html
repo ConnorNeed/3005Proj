@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Invoice</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .add-button {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Payment</h1>
+    <div id="add-form">
+        <select name="Items" id="item-menu">
+            <option value="None">Select Item...</option>
+        </select>
+        <input type="number" id="Quantity" name="Quantity" value="1"></input>
+    </div>
+    <button class="add-button" onclick="addRow()">Add Item</button>
+    <table id="admin-invoice-table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th> </th>
+            </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+    </table>
+    <div id="submit-form">
+        <select name="Users" id="user-menu">
+            <option value="None">Select User...</option>
+        </select>
+        <button class="add-button" onclick="createInvoice()">Submit</button>
+    </div>
+    <div id="nav_buttons">
+        <a href="/dashboard"><button>Home</button></a>
+    </div>
+    <script src="invoice.js"></script>
+</body>
+</html>
