@@ -1,7 +1,7 @@
 -- All passwords are 1234
-INSERT INTO 'login' (email, password_hash, user_type) VALUES ('admin', '$2a$10$T5/j7u4bUiVTJNP1omeSQujDjfzgWgs3AOGvRRpmXvVWM2ZJEM.tS', 2);
-INSERT INTO 'login' (email, password_hash, user_type) VALUES ('member', '$2a$10$l2uKlkotW1D/7JBO7VpEyeup84dm9wB70UYB/gRcS38Nt6qOrHBzC', 0);
-INSERT INTO 'login' (email, password_hash, user_type) VALUES ('trainer', '$2a$10$w6B3bQQO.BQuepIlJ76Qc.1DUoJd9KUxKctDt25TSOx.A49WZckFK', 1);
+INSERT INTO login (email, password_hash, usertype) VALUES ('admin', '$2a$10$T5/j7u4bUiVTJNP1omeSQujDjfzgWgs3AOGvRRpmXvVWM2ZJEM.tS', 2);
+INSERT INTO login (email, password_hash, usertype) VALUES ('member', '$2a$10$l2uKlkotW1D/7JBO7VpEyeup84dm9wB70UYB/gRcS38Nt6qOrHBzC', 0);
+INSERT INTO login (email, password_hash, usertype) VALUES ('trainer', '$2a$10$w6B3bQQO.BQuepIlJ76Qc.1DUoJd9KUxKctDt25TSOx.A49WZckFK', 1);
 
 INSERT INTO user_profiles (id, full_name, bio, age, gender) VALUES (2, 'Member', 'I want to get ripped', 25, 0);
 INSERT INTO user_profiles (id, full_name, bio, age, gender) VALUES (3, 'Trainer', 'I will get you ripped', 35, 1);
@@ -35,8 +35,8 @@ INSERT INTO lifts (activity_id, lift_type, amount) VALUES (4, 1, 200);
 
 INSERT INTO trainers (trainer_id, rating) VALUES (3, 9);
 
-INSERT INTO group_classes (trainer_id, class_type, start_time, end_time) VALUES (3, 0, '2024-04-01 10:00:00', '2024-04-01 11:00:00');
-INSERT INTO group_classes (trainer_id, class_type, start_time, end_time) VALUES (3, 1, '2024-04-01 12:00:00', '2024-04-01 13:00:00');
+INSERT INTO group_classes (trainer_id, class_type, start_time, end_time, class_difficulty) VALUES (3, 0, '2024-04-01 10:00:00', '2024-04-01 11:00:00',1);
+INSERT INTO group_classes (trainer_id, class_type, start_time, end_time, class_difficulty) VALUES (3, 1, '2024-04-01 12:00:00', '2024-04-01 13:00:00',5);
 
 INSERT INTO trainer_availability (trainer_id, start_time, end_time) VALUES (3, '2024-04-01 10:00:00', '2024-04-01 16:00:00');
 INSERT INTO trainer_availability (trainer_id, start_time, end_time) VALUES (3, '2024-04-02 09:00:00', '2024-04-02 21:00:00');
