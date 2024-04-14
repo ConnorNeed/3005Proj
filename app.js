@@ -210,7 +210,8 @@ app.get('/user/availibleClasses', async (req, res) => {
   if (!req.isAuthenticated()) {
     res.redirect('/login');
   }
-  sendAllGroupClasses(res);
+  var userId = req.user.id;
+  sendAllGroupClasses(userId, res);
 });
 app.get('/user/registeredClasses', async (req, res) => {
   if (!req.isAuthenticated()) {
@@ -251,6 +252,12 @@ app.post('/user/privateClassReg', async (req, res) => {
   }
   const userId = req.user.id;
   registerPrivateClass(userId, req.body.trainer, req.body.start, req.body.end, res);
+});
+app.get('/user/privateClasses', async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.redirect('/login');
+  }
+  sendPrivateClasses(req.user.id, res);
 });
 
 
@@ -715,8 +722,8 @@ function delActivity(user_id, activity) {
   });
 }
 //register group classes
-async function sendAllGroupClasses(res) {
-  var result = await pool.query("SELECT group_classes.class_id, class_type, start_time, end_time, class_difficulty, user_profiles.full_name AS name, rating FROM group_classes JOIN user_profiles ON group_classes.trainer_id = user_profiles.id JOIN trainers ON trainers.trainer_id = group_classes.trainer_id");
+async function sendAllGroupClasses(userId, res) {
+  var result = await pool.query("SELECT group_classes.class_id, class_type, start_time, end_time, class_difficulty, user_profiles.full_name AS name, rating FROM group_classes JOIN user_profiles ON group_classes.trainer_id = user_profiles.id JOIN trainers ON trainers.trainer_id = group_classes.trainer_id LEFT JOIN class_members ON group_classes.class_id=class_members.class_id WHERE class_members.user_id<>$1 or class_members.user_id IS NULL", [userId]);
   res.json(result.rows);
 }
 async function sendRegisteredGroupClasses(user_id, res) {
@@ -781,6 +788,10 @@ async function registerPrivateClass(user_id, trainer_id, start, end, res) {
     }
     res.sendStatus(200);
   });
+}
+async function sendPrivateClasses(user_id, res) {
+  var result = await pool.query('SELECT user_profiles.full_name AS name, start_time, end_time FROM private_classes JOIN user_profiles ON private_classes.trainer_id = user_profiles.id WHERE private_classes.user_id = $1', [user_id]);
+  res.json(result.rows);
 }
 
 
