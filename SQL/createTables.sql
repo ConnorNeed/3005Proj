@@ -6,7 +6,7 @@ CREATE TABLE "session" (
 ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
 CREATE INDEX "IDX_session_expire" ON "session" ("expire");
 
-CREATE TABLE login (
+CREATE TABLE 'login' (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
@@ -18,7 +18,8 @@ CREATE TABLE user_profiles (
     full_name VARCHAR(255),
     bio VARCHAR(255),
     age INT,
-    gender SMALLINT
+    gender SMALLINT,
+    PRIMARY KEY (id)
 );
 
 CREATE TABLE user_goals (
@@ -28,57 +29,59 @@ CREATE TABLE user_goals (
 );
 
 CREATE TABLE run_goals (
-    run_goal_id SERIAL PRIMARY KEY,
     user_goal_id INT REFERENCES user_goals (goal_id) ON DELETE CASCADE,
     distance INT,
-    duration INT
+    duration INT,
+    PRIMARY KEY (user_goal_id)
 );
 
 CREATE TABLE cycle_goals (
-    run_goal_id SERIAL PRIMARY KEY,
     user_goal_id INT REFERENCES user_goals (goal_id) ON DELETE CASCADE,
     distance INT,
-    duration INT
+    duration INT,
+    PRIMARY KEY (user_goal_id)
 );
 
 CREATE TABLE body_goals (
-    body_goal_id SERIAL PRIMARY KEY,
     user_goal_id INT REFERENCES user_goals (goal_id) ON DELETE CASCADE,
-    amount INT
+    amount INT,
+    PRIMARY KEY (user_goal_id)
 );
 CREATE TABLE lifting_goals (
-    lift_goal_id SERIAL PRIMARY KEY,
     user_goal_id INT REFERENCES user_goals (goal_id) ON DELETE CASCADE,
     lift_type INT,
-    amount INT
+    amount INT,
+    PRIMARY KEY (user_goal_id)
 );
+
 CREATE TABLE activities (
     activity_id SERIAL PRIMARY KEY,
-    user_id INT,
+    user_id INT REFERENCES user_profiles (id) ON DELETE CASCADE,
     activity_type SMALLINT
 );
 CREATE TABLE runs (
-    run_activity_id SERIAL PRIMARY KEY,
     activity_id INT REFERENCES activities (activity_id) ON DELETE CASCADE,
     distance INT,
-    duration INT
+    duration INT,
+    PRIMARY KEY (activity_id)
 );
 CREATE TABLE cycles (
-    cycle_activity_id SERIAL PRIMARY KEY,
     activity_id INT REFERENCES activities (activity_id) ON DELETE CASCADE,
     distance INT,
-    duration INT
+    duration INT,
+    PRIMARY KEY (activity_id)
 );
 CREATE TABLE lifts (
-    lift_activity_id SERIAL PRIMARY KEY,
     activity_id INT REFERENCES activities (activity_id) ON DELETE CASCADE,
     lift_type INT,
-    amount INT
+    amount INT,
+    PRIMARY KEY (activity_id)
 );
 
 CREATE TABLE trainers (
     trainer_id INT UNIQUE REFERENCES login (id) ON DELETE CASCADE,
-    rating INT
+    rating INT,
+    PRIMARY KEY (trainer_id)
 );
 
 CREATE TABLE group_classes (
@@ -99,7 +102,7 @@ CREATE TABLE trainer_availability (
 
 CREATE TABLE class_members (
     class_id INT REFERENCES group_classes (class_id) ON DELETE CASCADE,
-    user_id INT REFERENCES user_profiles (id) ON DELETE CASCADE
+    user_id INT REFERENCES user_profiles (id) ON DELETE CASCADE,
     PRIMARY KEY (class_id, user_id)
 );
 
@@ -113,7 +116,8 @@ CREATE TABLE private_classes (
 
 CREATE TABLE admins (
     admin_id INT UNIQUE REFERENCES login (id) ON DELETE CASCADE,
-    full_name VARCHAR(255)
+    full_name VARCHAR(255),
+    PRIMARY KEY (admin_id)
 );
 
 CREATE TABLE priceList (
@@ -128,9 +132,9 @@ CREATE TABLE invoices (
     admin_id INT REFERENCES admins (admin_id)
 );
 CREATE TABLE transactions (
-    transaction_id SERIAL PRIMARY KEY,
     invoice_id INT REFERENCES invoices (invoice_id),
-    admin_id INT REFERENCES admins (admin_id)
+    admin_id INT REFERENCES admins (admin_id),
+    PRIMARY KEY (invoice_id)
 );
 CREATE TABLE invoice_items (
     invoice_id INT REFERENCES invoices (invoice_id),
